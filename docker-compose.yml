@@ -1,0 +1,63 @@
+services:
+  # --- NVIDIA Triton Inference Server ---
+  triton:
+    build:
+      context: ./triton
+    ports:
+      - "8000:8000"   # HTTP (Triton v2 protocol)
+      - "8001:8001"   # gRPC
+      - "8002:8002"   # Prometheus metrics
+    volumes:
+      - ./triton/model_repository:/models
+      - ./sample_data:/sample_data
+    command: tritonserver --model-repository=/models --log-verbose=1 --exit-on-error=false --strict-model-config=false
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    shm_size: "1g"
+
+  # --- Monitoring ---
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    depends_on:
+      - triton
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+    depends_on:
+      - prometheus
+
+  # --- FastAPI custom implementation ---
+  fastapi:
+    build:
+      context: ./fastapi_app
+    ports:
+      - "9000:8000"   # HTTP (remapped to 9000 to avoid conflict)
+      - "50051:50051"  # gRPC
+    volumes:
+      - ./fastapi_app:/app
+      - ./sample_data:/app/sample_data
+    environment:
+      - LOG_LEVEL=INFO
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]

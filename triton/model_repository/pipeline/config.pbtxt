@@ -1,0 +1,36 @@
+name: "pipeline"
+backend: "python"
+max_batch_size: 8
+
+input [
+  {
+    name: "DUMMY"
+    data_type: TYPE_FP32
+    dims: [ 1 ]
+  }
+]
+
+output [
+  {
+    name: "DETECTIONS_YOLO1"
+    data_type: TYPE_FP32
+    dims: [ -1, 6 ]
+  },
+  {
+    name: "DETECTIONS_YOLO2"
+    data_type: TYPE_FP32
+    dims: [ -1, 6 ]
+  }
+]
+
+dynamic_batching {
+  preferred_batch_size: [ 6, 8 ]
+  max_queue_delay_microseconds: 100000
+}
+
+instance_group [
+  {
+    count: 6
+    kind: KIND_CPU
+  }
+]

@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package inference;
+
+// gRPC inference service — mirrors Triton's v2 inference protocol structure.
+// Triton provides HTTP + gRPC by default; this is ~200 lines of manual effort
+// to add gRPC support to FastAPI.
+
+service InferenceService {
+  rpc Predict (PredictRequest) returns (PredictResponse);
+  rpc Health (HealthRequest) returns (HealthResponse);
+}
+
+message PredictRequest {
+  bytes image_data = 1;  // Raw JPEG/PNG bytes
+}
+
+message Detection {
+  float x1 = 1;
+  float y1 = 2;
+  float x2 = 3;
+  float y2 = 4;
+  float confidence = 5;
+  int32 yolo_class = 6;
+  string label = 7;
+}
+
+message PredictResponse {
+  repeated Detection detections = 1;
+}
+
+message HealthRequest {}
+
+message HealthResponse {
+  string status = 1;
+  map<string, string> models = 2;
+}

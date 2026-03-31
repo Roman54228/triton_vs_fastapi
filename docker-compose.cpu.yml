@@ -1,0 +1,30 @@
+services:
+  # --- NVIDIA Triton Inference Server (CPU) ---
+  triton:
+    image: nvcr.io/nvidia/tritonserver:24.01-py3
+    ports:
+      - "8000:8000"   # HTTP (Triton v2 protocol)
+      - "8001:8001"   # gRPC
+      - "8002:8002"   # Prometheus metrics
+    volumes:
+      - ./triton/model_repository:/models
+      - ./sample_data:/sample_data
+    command: >
+      bash -c "pip install --force-reinstall opencv-python-headless 'numpy<2' Pillow &&
+               python3 -c 'import cv2; print(f\"OpenCV {cv2.__version__}\")' &&
+               tritonserver --model-repository=/models --log-verbose=1 --exit-on-error=false --strict-model-config=false --pinned-memory-pool-byte-size=0 --cuda-memory-pool-byte-size=0:0"
+    environment:
+      - CUDA_VISIBLE_DEVICES=
+    shm_size: "1g"
+
+  # --- FastAPI custom implementation (CPU) ---
+  fastapi:
+    build: ./fastapi_app
+    ports:
+      - "9000:8000"   # HTTP (remapped to 9000 to avoid conflict)
+      - "50051:50051"  # gRPC
+    volumes:
+      - ./fastapi_app:/app
+      - ./sample_data:/app/sample_data
+    environment:
+      - LOG_LEVEL=INFO

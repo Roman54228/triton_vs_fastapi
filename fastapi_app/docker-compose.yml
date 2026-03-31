@@ -1,0 +1,18 @@
+services:
+  fastapi:
+    build: .
+    ports:
+      - "8000:8000"   # HTTP
+      - "50051:50051"  # gRPC
+    volumes:
+      - ./models:/app/models
+      - ../sample_data:/app/sample_data
+    environment:
+      - LOG_LEVEL=INFO
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
