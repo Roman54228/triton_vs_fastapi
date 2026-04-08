@@ -11,23 +11,18 @@ import requests
 
 def send_triton_request(url: str) -> float:
     """Send one request to Triton pipeline, return latency in ms."""
-    # payload = {
-    #     "inputs": [
-    #         {"name": "DUMMY", "shape": [1, 1], "datatype": "FP32", "data": [0.0]}
-    #     ],
-    # }
-    image_path = '/sample_data/test.jpg'
     payload = {
         "inputs": [
             {
-                "name": "IMAGE_PATH",
+                "name": "DUMMY",
                 "shape": [1],
-                "datatype": "BYTES",
-                "data": [image_path],
+                "datatype": "FP32",
+                "data": [0.0],
             }
         ],
         "outputs": [
-            {"name": "DETECTIONS"},
+            {"name": "DETECTIONS_YOLO1"},
+            {"name": "DETECTIONS_YOLO2"},
         ],
     }
     start = time.perf_counter()
